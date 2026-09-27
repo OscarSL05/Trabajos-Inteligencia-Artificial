@@ -23,10 +23,6 @@ public class SearchTree {
         this.root = new Node(initialState, null);
     }
 
-    /* TAREA, UNA VEZ TERMINADO, HAY QUE IMPRIMIR LAS COMPLEJIDADES de tiempo y espacio usado
-    E IMPRIMIR ALGO BONITO COMO IMPRIMIR DESDE EL ESTADO INICIAL HASTA EL ESTADO META
-    NECESITAMOS CREAR UN METODO DENTRO DE SearchTree */
-
     //BUSQUEDA PRIMERO EN ANCHURA
     public void breadthFirstSearch() {
         System.out.println("breadthFirstSearch (BUSQUEDA PRIMERO EN ANCHURA)");
@@ -173,7 +169,7 @@ public class SearchTree {
 
 
     //BSUQUEDA LIMITADA EN PROFUNDIDAD PARA IMPLEMENTAR LA BUSQUEDA ITERATIVA
-    public Node depthLimitedSearch(int limit) {
+    public Node depthLimitedSearchMetodoFuncion(int limit) {
         
         // Crear estructura de datos para almacenar los nodos visitados
         Set<String> visited = new HashSet<String>();
@@ -218,7 +214,34 @@ public class SearchTree {
         return null;
     }
 
-
+    //BUSQUEDA LIMITADA EN PROFUNDIDAD 
+    public void depthLimitedSearch(int limit) {
+        System.out.println("depthLimitedSearch (BUSQUEDA LIMITADA EN PROFUNDIDAD)");
+        long startTime = System.currentTimeMillis();
+        //USO LAS MISMAS VARIABLES GLOBALES QUE EN IDS PARA NO REPETIR CODIGO
+        timeIDS = 0;
+        maxStackIDS = 0;
+        visitedIDS = 0;
+        //LLAMAMOS AL METODO DE BUSQUEDA LIMITADA EN PROFUNDIDAD
+        Node result = depthLimitedSearchMetodoFuncion(limit);
+        //si encontramos el nodo objetivo lo imprimimos si no lo encontramos imprimimos un mensaje de error
+        if(result != null) {
+            System.out.println("Goal state found at depth " + limit + ": " + result.getState());
+            printPath(result);
+        } else {
+            System.out.println("NO SE ENCONTRO SOLUCION CON LIMITE DE PROFUNDIDAD DE " + limit);
+        }
+        
+        long endTime = System.currentTimeMillis();
+        System.out.println("--------------------------------");
+        System.out.println("DATOS DE EJECUCION");
+        System.out.println("Time: " + timeIDS);
+        System.out.println("Estados visitados: " + visitedIDS);
+        System.out.println("Time Used: " + (endTime - startTime) + " ms");
+        System.out.println("Stack: " + 0);//NO HAY STACK YA QUE SE REINICIA CADA VEZ
+        System.out.println("Max Stack : " + maxStackIDS);
+        System.out.println("--------------------------------");
+    }
 
     //BUSQUEDA EN PROFUNDIDAD ITERATIVA
     public void IterativeDeepeningSearch() {
@@ -234,7 +257,7 @@ public class SearchTree {
         for (int limit = 0; limit <= maxDepth; limit++) {
 
             //LLAMADA AL METODO DE BUSQUEDA LIMITADA EN PROFUNDIDAD
-            Node result = depthLimitedSearch(limit);
+            Node result = depthLimitedSearchMetodoFuncion(limit);
             //SI NO ES NULL ENCONTRAMOS EL NODO OBJETIVO
             if (result != null) {
                 System.out.println("Goal state found at depth " + limit + ": " + result.getState());
@@ -260,7 +283,113 @@ public class SearchTree {
         System.out.println("--------------------------------");
     }
 
+    //BUSQUEDA BIDRECTIONAL (OPCIONAL)
+    //BUSCAMOS DESDE AMBOS EXTREMOS AL MISMO TIEMPO, CUANDO LOS DOS LADOS CHOCAN, ENTONCES HEMOS ENCONTRADO EL NODO OBJETIVO Y SE 
+    //ARMA EL CAMINO DESDE EL NODO RAIZ HASTA EL NODO OBJETIVO Y DESDE EL NODO OBJETIVO HASTA EL NODO RAIZ
+    public void bidirectionalSearch() {
+        System.out.println("bidirectionalSearch (BUSQUEDA BIDIRECCIONAL)");
+        // Implementación de la búsqueda bidireccional
+        long startTime = System.currentTimeMillis();
+        int time=0;
+        int maxStack=0;
 
+        //DOS COLAS PARA ALMACENAR LOS NODOS VISITADOS DESDE EL INICIO Y DESDE EL OBJETIVO
+        Queue<Node> queueStart = new LinkedList<>();
+        Queue<Node> queueGoal = new LinkedList<>();
+        
+        //MAPAS PARA ALMACENAR LOS NODOS VISITADOS DESDE EL INICIO Y DESDE EL OBJETIVO 
+        //Y EN LUGAR DE SET USAMOS MAPAS PARA PODER GUARDAR EL NODO COMPLETO Y NO SOLO EL ESTADO
+        java.util.Map<String, Node> visitedStart = new java.util.HashMap<>();
+        java.util.Map<String, Node> visitedGoal = new java.util.HashMap<>();
+
+        //AGREGAMOS EL NODO RAIZ A LA COLA DE INICIO Y EL NODO OBJETIVO A LA COLA DE OBJETIVO
+        Node currentNodeStart = root;
+        Node currentNodeGoal = new Node(goalState, null);
+
+        //AGREGAMOS LOS NODOS A LAS COLAS Y A LOS MAPAS DE VISITADOS
+        queueStart.add(currentNodeStart);
+        queueGoal.add(currentNodeGoal);
+        visitedStart.put(currentNodeStart.getState(), currentNodeStart);
+        visitedGoal.put(currentNodeGoal.getState(), currentNodeGoal);
+        
+        Node meetingNodeStart = null; //NODO DONDE SE ENCUENTRAN LAS DOS BUSQUEDAS DESDE EL INICIO
+        Node meetingNodeGoal = null; //NODO DONDE SE ENCUENTRAN4 LAS DOS BUSQUEDAS DESDE EL OBJETIVO
+
+        //CICLO PRINCIPAL DE LA BUSQUEDA BIDIRECCIONAL MIENTRAS AMBAS COLAS NO ESTEN VACIAS
+        //AQUI EXPANDIMOS UN NODO DE CADA LADO POR ITERACION (NO UN NIVEL COMPLETO).
+        while (!queueStart.isEmpty() && !queueGoal.isEmpty()) {
+            time++;
+            int totalStack = queueStart.size() + queueGoal.size();
+            if (totalStack > maxStack) {
+                maxStack = totalStack;
+            }
+        
+            //BUSQUEDA DESDE EL INICIO
+            currentNodeStart = queueStart.poll();
+            //VERIFICAMOS SI EL NODO ACTUAL DESDE EL INICIO YA FUE VISITADO DESDE EL OBJETIVO
+            if (visitedGoal.containsKey(currentNodeStart.getState())) {
+                meetingNodeStart = currentNodeStart;
+                meetingNodeGoal = visitedGoal.get(currentNodeStart.getState());
+                break;
+            }
+            //GENERAMOS LOS HIJOS DEL NODO ACTUAL DESDE EL INICIO Y LOS AGREGAMOS A LA COLA DE INICIO SI NO HAN SIDO VISITADOS
+            //USAMOS GENERATECHILDREN PARA GENERAR LOS HIJOS Y LUEGO LOS AGREGAMOS A LA COLA DE INICIO SI NO HAN SIDO VISITADOS
+            List<Node> childrenStart = NodeUtils.generateChildren(currentNodeStart);
+            for (Node child : childrenStart) {
+                if (!visitedStart.containsKey(child.getState())) {
+                    queueStart.add(child);
+                    visitedStart.put(child.getState(), child);
+                }
+            }
+
+            //BUSQUEDA DESDE EL OBJETIVO
+            currentNodeGoal = queueGoal.poll();
+            //VERIFICAMOS SI EL NODO ACTUAL DESDE EL OBJETIVO YA FUE VISITADO DESDE EL NODO DEL INICIO
+            if (visitedStart.containsKey(currentNodeGoal.getState())) {
+                meetingNodeStart = visitedStart.get(currentNodeGoal.getState());
+                meetingNodeGoal = currentNodeGoal;
+                break;
+            }
+            //GENERAMOS LOS HIJOS DEL NODO ACTUAL DESDE EL OBJETIVO Y LOS AGREGAMOS A LA COLA DE OBJETIVO SI NO HAN SIDO VISITADOS
+            List<Node> childrenGoal = NodeUtils.generateChildren(currentNodeGoal);
+            for (Node child : childrenGoal) {
+                if (!visitedGoal.containsKey(child.getState())) {
+                    queueGoal.add(child);
+                    visitedGoal.put(child.getState(), child);
+                }
+            }            
+        }
+        //CALCULAMOS EL TIEMPO DE EJECUCION
+        long endTime = System.currentTimeMillis();
+
+        //SI ENCONTRAMOS EL NODO OBJETIVO DESDE EL INICIO Y DESDE EL OBJETIVO, 
+        // IMPRIMIMOS EL CAMINO DESDE EL INICIO HASTA EL NODO OBJETIVO Y DESDE EL OBJETIVO HASTA EL NODO OBJETIVO
+        if (meetingNodeStart != null && meetingNodeGoal != null) {
+            System.out.println("Goal state found: " + meetingNodeStart.getState());
+            //IMPRIMIMOS EL CAMINO DESDE EL NODO RAIZ HASTA EL NODO OBJETIVO
+            printPath(meetingNodeStart);
+
+            //IMPRIMIMOS EL CAMINO DESDE EL NODO OBJETIVO HASTA EL NODO RAIZ
+            //COMO EL CAMINO DESDE EL NODO OBJETIVO HASTA EL NODO RAIZ ES INVERSO, LO IMPRIMIMOS EN ORDEN INVERSO
+            //A DIFERENCIA DE printPath, AQUI NO USAMOS RECURSION SINO UN CICLO WHILE PARA IMPRIMIR EL CAMINO DESDE EL NODO OBJETIVO HASTA EL NODO RAIZ
+            Node currentNode = meetingNodeGoal.getParent(); //EMPEZAMOS DESDE EL PADRE DEL NODO OBJETIVO PARA NO IMPRIMIRLO DOS VECES
+            while (currentNode != null) {
+                System.out.println(NodeUtils.formatState(currentNode.getState()));
+                currentNode = currentNode.getParent();
+            }
+        } else {
+            System.out.println("NO SE ENCONTRO SOLUCION");
+        }
+        System.out.println("--------------------------------");
+        System.out.println("DATOS DE EJECUCION");
+        System.out.println("Time: " + time);
+        System.out.println("Estados visitados: " + (visitedStart.size() + visitedGoal.size()));
+        System.out.println("Time Used: " + (endTime - startTime) + " ms");
+        System.out.println("Stack: " + (queueStart.size() + queueGoal.size()));
+        System.out.println("Max Stack : " + maxStack);
+        System.out.println("--------------------------------");
+    }
+   
 
         
     public void printPath(Node node) {
